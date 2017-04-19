@@ -51,6 +51,43 @@ def get_auth_token(consumer_key, consumer_secret):
     return response_json['access_token']
 
 
+def get_status_by_id(tweet_id, token):
+    endpoint = '1.1/statuses/show.json'
+
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+
+    params = {'id': tweet_id}
+    resp = r.get(
+        API_ROOT + endpoint,
+        headers=headers,
+        params=params
+    )
+
+    response_json = resp.json()
+    return response_json
+
+
+def get_video_url_from_status(status):
+    media = status.get('extended_entities', {}).get('media', [])
+    variants = media[0].get('video_info', {}).get('variants')
+
+    if not variants:
+        print('Could not find a video. (╯°□°）╯︵ ┻━┻ ')
+        raise RuntimeError('Womp womp')
+
+    urls = [variant['url'] for variant in variants
+            if variant['url'].endswith('mp4')]
+
+    # This function could produce multiple urls, but at time of writing, we
+    # only want the one. We are picking it arbitrarily. Change here if needed.
+    # -- RMD 2017-04-18
+    return urls[0]
+
+
 if __name__ == '__main__':
     key, secret = get_twitter_creds_from_env()
-    print(get_auth_token(key, secret))
+    token = get_auth_token(key, secret)
+    status = get_status_by_id('854059190511423489', token)
+    print(get_video_url_from_status(status))
